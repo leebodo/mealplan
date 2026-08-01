@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Week Planner — RPL Plan 2</title>
+<style>
+:root{
+  --paper:#e9edef; --card:#fff; --ink:#131e27; --dim:#5d6d79; --rule:#ccd6dc;
+  --slate:#2c4256; --indigo:#31427a; --indigobg:#e7eaf6;
+  --green:#1d6349; --greenbg:#dff0e8;
+  --amber:#8a5a12; --amberbg:#fbeed6;
+  --crimson:#95283c; --crimsonbg:#fbe6ea;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:15px/1.5 "Helvetica Neue",Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+.wrap{max-width:1500px;margin:auto;padding:24px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+h1{margin:6px 0 0;font-size:31px;letter-spacing:-.025em;font-weight:800}
+h2{font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 12px}
+.sub{margin:8px 0 0;color:var(--dim);max-width:74ch}
+.masthead{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.verdict{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.chip{font:700 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;
+  padding:8px 12px;border-radius:6px;background:var(--greenbg);color:var(--green);white-space:nowrap}
+.chip.bad{background:var(--crimsonbg);color:var(--crimson)}
+.chip.warnc{background:var(--amberbg);color:var(--amber)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button,select,input{font:inherit;border:1px solid var(--rule);background:var(--card);color:var(--ink);
+  padding:8px 10px;border-radius:7px}
+button{font-weight:700;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.solid{background:var(--slate);color:#fff;border-color:var(--slate)}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:16px}
+.events{margin-top:18px}
+.erow{display:grid;grid-template-columns:26px 92px 104px 126px 1fr auto;gap:8px;align-items:center;
+  padding:9px 0;border-top:1px solid var(--rule)}
+.erow:first-of-type{border-top:0}
+.enum{font:700 12px/1 var(--mono);color:var(--dim)}
+.ehint{font-size:13px;color:var(--dim)}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:16px;margin-top:16px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(168px,1fr));gap:9px;min-width:1180px}
+.calwrap{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:14px;overflow-x:auto}
+.day{border:1px solid var(--rule);border-radius:10px;background:#f7f9fa;display:flex;flex-direction:column}
+.day.protect{box-shadow:inset 0 0 0 2px #b6cfc2}
+.dhead{display:flex;justify-content:space-between;align-items:baseline;padding:9px 10px 6px}
+.dname{font:800 15px/1 "Helvetica Neue",sans-serif;letter-spacing:.02em}
+.tag{font:700 9px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--green);
+  background:var(--greenbg);padding:4px 6px;border-radius:4px}
+.slot{margin:0 8px 7px;background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:8px}
+.slot.out{background:var(--greenbg);border-color:#a5c9b6}
+.slot.host{background:var(--indigobg);border-color:#b3bdda}
+.slot.shift{background:#eef1f4;border-color:#bcc7d0}
+.slabel{font:700 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.sbody{margin-top:5px;font-size:13px}
+.need{margin-top:6px;font:700 11px/1.3 var(--mono);color:var(--crimson)}
+.cookline{margin:0 8px 8px;padding:7px 8px;border-radius:7px;font:700 11px/1.35 var(--mono);
+  background:#e4e9ec;color:var(--slate)}
+.cookline.alt{background:var(--indigobg);color:var(--indigo)}
+.strip{margin:auto 8px 9px;padding-top:8px;border-top:1px solid var(--rule)}
+.bar{position:relative;height:7px;background:#dde4e8;border-radius:4px;margin:5px 0 8px;overflow:visible}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--slate)}
+.fill.bad{background:var(--crimson)}.fill.over{background:var(--amber)}
+.tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.55}
+.mrow{display:flex;justify-content:space-between;font:600 11px/1 var(--mono);color:var(--dim)}
+.mval{color:var(--ink)}.mval.bad{color:var(--crimson)}.mval.over{color:var(--amber)}
+.side{display:flex;flex-direction:column;gap:14px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--rule)}
+.tot:last-child{border-bottom:0}
+.tot span{font-size:13px;color:var(--dim)}
+.tot b{font:700 15px/1 var(--mono)}
+.tot b.bad{color:var(--crimson)}.tot b.over{color:var(--amber)}
+.note{padding:10px;border-radius:8px;font-size:13px;margin:8px 0 0}
+.note.g{background:var(--greenbg);color:var(--green)}
+.note.a{background:var(--amberbg);color:var(--amber)}
+.note.i{background:var(--indigobg);color:var(--indigo)}
+.note.c{background:var(--crimsonbg);color:var(--crimson)}
+ol.steps{margin:0;padding-left:20px;font-size:13px}
+ol.steps li{padding:5px 0}
+.batch{padding:9px 0;border-bottom:1px solid var(--rule);font-size:13px}
+.batch:last-child{border-bottom:0}
+.batch b{font-family:var(--mono);font-size:12px}
+.dep{display:block;margin-top:4px;color:var(--dim);font-size:12px}
+.shoplist{font-size:13px;margin:0;padding:0;list-style:none}
+.shoplist li{padding:4px 0;display:flex;gap:7px}
+.shoplist .op{font:700 12px/1.4 var(--mono);width:14px;flex:none}
+.add .op{color:var(--green)}.cut .op{color:var(--crimson)}
+.foot{color:var(--dim);font-size:12.5px;margin-top:16px;max-width:100ch}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--dim)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .18s ease}}
+@media(max-width:1120px){.layout{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .wrap{padding:14px}.grid{grid-template-columns:1fr;min-width:0}
+  .day{flex-direction:column}.erow{grid-template-columns:1fr 1fr;gap:6px}
+  .enum,.ehint{grid-column:1/-1}h1{font-size:25px}
+}
+@media print{
+  body{background:#fff}.btns,.events{display:none}.layout{display:block}
+  .calwrap{border:0;padding:0;overflow:visible}.grid{grid-template-columns:repeat(7,1fr);min-width:0;gap:5px}
+  .side{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+  .panel{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="masthead">
+  <div>
+    <div class="eyebrow">Rainbow Plant Life · Plan 2 · weekly system v5</div>
+    <h1>Week Planner</h1>
+    <p class="sub">Add meals you'll eat out or host. The planner rearranges the week, resizes batches where that's safe, and checks every day against the 112&nbsp;g protein floor and 2,300&nbsp;mg sodium line.</p>
+  </div>
+  <div class="verdict">
+    <div id="verdict" class="chip">Default week</div>
+    <div class="btns">
+      <button onclick="resetAll()">Reset week</button>
+      <button onclick="window.print()">Print</button>
+      <button class="solid" onclick="saveNow()">Save</button>
+    </div>
+  </div>
+</div>
+
+<section class="panel events" id="events"></section>
+
+<div id="preweek"></div>
+<div class="layout">
+  <section class="calwrap"><div class="grid" id="grid"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:#dff0e8;border:1px solid #a5c9b6"></i>eating out</span>
+      <span><i class="sw" style="background:#e7eaf6;border:1px solid #b3bdda"></i>hosting</span>
+      <span><i class="sw" style="background:#f7f9fa;box-shadow:inset 0 0 0 2px #b6cfc2"></i>Tuesday, no cooking</span>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="panel"><h2>Week totals</h2><div id="totals"></div><div id="totalnotes"></div></section>
+    <section class="panel"><h2>What to cook</h2><div id="batches"></div></section>
+    <section class="panel"><h2>Adjustments</h2><ol class="steps" id="adj"></ol></section>
+    <section class="panel"><h2>Shopping changes</h2><div id="shop"></div></section>
+    <section class="panel"><h2>Rules this follows</h2>
+      <div class="batch"><b>Tuesday never cooks.</b><span class="dep">If Monday dinner is out, you're asked whether Monday cooking still happens; if not, Recipe A really does move to Sunday night and its window shortens to Mon–Wed.</span></div>
+      <div class="batch"><b>Hosting never rewrites your week.</b><span class="dep">If a hosting date can't safely use the ordinary batch, it gets its own extra batch on that day. Your normal dinners stay exactly where they are.</span></div>
+      <div class="batch"><b>Event order doesn't matter.</b><span class="dep">Dates are resolved together, so entering the same two meals in either order gives the same plan.</span></div>
+      <div class="batch"><b>Batches stay even, guests included.</b><span class="dep">Whole cans and whole tofu blocks. Four for you plus three guests becomes eight, with the spare assigned rather than left unexplained.</span></div>
+      <div class="batch"><b>Nothing goes to work.</b><span class="dep">Weekday lunches stay packaged. A spare serving joins another home sitting, two servings maximum.</span></div>
+      <div class="batch"><b>Batches are always even.</b><span class="dep">0, 2, 4 or up — never an odd number, so never a half can or part block. Hosting rounds up and the extra portion goes round for seconds.</span></div>
+      <div class="batch"><b>Meals out cover what disappears.</b><span class="dep">A two-serving sitting genuinely goes, and that meal is sized to replace it. One estimate is used throughout — no competing numbers for the same meal.</span></div>
+      <div class="batch"><b>Planned personal intake stays under ~2,800 kcal a day.</b><span class="dep">Counting anything eaten out. A spare hosting portion isn't counted — it's for guests. A heavy day gives its Huel back rather than piling on.</span></div>
+      <div class="batch"><b>Crema is always made on Saturday.</b><span class="dep">It covers this weekend's tacos plus a standard four Burrito Bowls next Monday. Even in a week with no tacos at all, ¾ cup still gets made — nothing else produces it, and Monday depends on it.</span></div>
+      <div class="batch"><b>Drinks aren't part of a meal out.</b><span class="dep">Soylent, Evolve, Huel and coffee stay on the day. Only the meal is replaced.</span></div>
+      <div class="batch"><b>Daily sodium is shown, not policed.</b><span class="dep">Only the weekly average is a limit, and the restaurant assumption is yours to set.</span></div>
+    </section>
+    </aside>
+</div>
+
+<p class="foot">Team lunch is costed as the customized Shroomami with bread (645 kcal, 23 g, ~1,780 mg); swap in real figures if you order something else. Nutrition values are otherwise the verified v5 ledger. Meals eaten out are not counted in weekly totals — the planner shows what your own food supplies and how much the outside meal needs to carry. Hosting doesn't change what you eat, only what you cook and buy.</p>
+</div>
+
+<script>
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const FLOOR_P=112, CEIL_NA=2300, WK_LO=15204, WK_HI=15356, WK_P=784;
+const DAY_CAP=2800, OUT_KCAL=700;
+const NA_EST={light:800,typical:1300,salty:1800};
+const F={
+  A:{n:'Burrito Bowl',k:874,p:40,s:285,meal:1},
+  B:{n:'Spring Roll Bowl',k:746,p:27.25,s:841,meal:1},
+  C:{n:'Black Bean Tacos',k:723,p:26.33,s:479,meal:1},
+  oat:{n:'Mixed Berry oat bowl',k:350,p:17,s:140,meal:1,drop:'defer'},
+  pesto:{n:'½ bag pesto pasta',k:280,p:8,s:510,meal:1,drop:'defer'},
+  shroom:{n:'Team lunch',k:645,p:23,s:1780,meal:1,drop:'skip'},
+  soy:{n:'Soylent CP',k:250,p:30,s:290,stays:1},
+  evo:{n:'Evolve',k:140,p:20,s:220,stays:1},
+  huel:{n:'Huel Black RTD',k:400,p:35,s:310,stays:1},
+  cof:{n:'coffee',k:37,p:1.7,s:35,stays:1},
+  nooch:{n:'nooch',k:6.67,p:0.83,s:0,drop:'less'},
+  supp:{n:'supplements',k:27,p:0,s:0,stays:1}
+};
+const REC={
+  A:{name:'Burrito Bowls',cook:'Mon',unit:'1 can pinto beans per 2 servings',crema:1},
+  B:{name:'Spring Roll Bowls',cook:'Thu',unit:'½ tofu block + 4 oz noodles per 2 servings'},
+  C:{name:'Black Bean Tacos',cook:'Sat',unit:'1 can black beans per 2 servings',crema:1}
+};
+const BASE={
+  Mon:{L:[['oat',1],['soy',2]],              D:[['A',1]]},
+  Tue:{L:[['shroom',1],['nooch',1]],         D:[['A',1],['soy',2]]},
+  Wed:{L:[['pesto',1],['soy',2],['nooch',1]],D:[['A',2]]},
+  Thu:{L:[['oat',1],['soy',2],['evo',1]],    D:[['B',1]]},
+  Fri:{L:[['pesto',1],['soy',2],['evo',1],['nooch',1]], D:[['B',1]]},
+  Sat:{L:[['B',2]],                          D:[['C',1],['huel',1]]},
+  Sun:{L:[['C',1]],                          D:[['C',2],['huel',1]]}
+};
+const HOME=(d,m)=>m==='D'||d==='Sat'||d==='Sun';
+const CREMA_CUPS=1.5, CREMA_COVERS=8;
+function eatDays(cook,before){
+  if(before)return ['Mon','Tue','Wed'];
+  return DAYS.slice(DAYS.indexOf(cook),DAYS.indexOf(cook)+4);
+}
+const CUPS=[[3,'3 cups'],[2.625,'2⅝ cups'],[2.25,'2¼ cups'],[2.0625,'2 cups'],[1.875,'1⅞ cups'],
+  [1.75,'1¾ cups'],[1.5,'1½ cups'],[1.3125,'1⅓ cups'],[1.25,'1¼ cups'],[1.125,'1⅛ cups'],
+  [1,'1 cup'],[0.875,'⅞ cup'],[0.75,'¾ cup'],[0.625,'⅝ cup'],[0.5,'½ cup'],[0.375,'⅜ cup'],[0.25,'¼ cup']];
+const cupTxt=c=>{const e=CUPS.find(x=>Math.abs(x[0]-c)<0.03);return e?e[1]:(Math.round(c*20)/20)+' cups'};
+
+function compute(ev,opts){
+  opts=opts||{};
+  const naEst=NA_EST[opts.naLevel||'typical'];
+  // deterministic order: event order must never change the answer
+  const seen=new Set();
+  ev=(ev||[]).filter(e=>{const k=e.day+e.meal;if(seen.has(k))return false;seen.add(k);return true})
+    .slice().sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)||(a.meal<b.meal?-1:1));
+
+  const adj=[],flags=[],add={},cut={},defer={},skip={},less={},removed={};
+  const bump=(o,k,n)=>{o[k]=(o[k]||0)+(n||1)};
+  const shed=(id,q)=>{const c=F[id].drop;if(c==='defer')bump(defer,id,q);
+    else if(c==='skip')bump(skip,id,q);else if(c==='less')bump(less,id,q)};
+
+  // --- ordinary cook dates depend only on whether Monday can cook ---
+  const ord={A:'Mon',B:'Thu',C:'Sat'}, ordBefore={A:false,B:false,C:false};
+  if(ev.some(e=>e.day==='Mon'&&e.meal==='D'&&e.kind==='out'&&e.cookMon===false)){
+    ord.A='Sun';ordBefore.A=true;
+    adj.push('Cook Recipe A on Sunday evening. Monday then needs no cooking and Tuesday\'s dinner still exists — Sunday to Wednesday is three days, inside the window.');
+  }
+
+  // --- classify hosting: does it fall inside the ordinary batch's window? ---
+  const hostEv=ev.filter(e=>e.kind==='host'&&e.recipe&&e.recipe!=='other');
+  const inWin={},outWin={};
+  ['A','B','C'].forEach(r=>{const w=eatDays(ord[r],ordBefore[r]);
+    inWin[r]=hostEv.filter(e=>e.recipe===r&&w.includes(e.day));
+    outWin[r]=hostEv.filter(e=>e.recipe===r&&!w.includes(e.day))});
+  // group out-of-window dates that a single extra batch can cover
+  const sessions=[];
+  ['A','B','C'].forEach(r=>{
+    const list=outWin[r];let i=0;
+    while(i<list.length){
+      const first=list[i];
+      let cookOn=first.day;
+      if(cookOn==='Tue'){cookOn='Mon';
+        adj.push(`Tuesday hosting can't mean Tuesday cooking — the extra ${REC[r].name} batch is cooked Monday and served the next evening.`)}
+      const gw=eatDays(cookOn,false), group=[first];
+      let j=i+1;while(j<list.length&&gw.includes(list[j].day)){group.push(list[j]);j++}
+      sessions.push({r,day:cookOn,kind:'host',days:group.map(e=>e.day),
+        forMe:group.length,guests:group.reduce((t,e)=>t+e.guests,0)});
+      if(group.length>1)adj.push(`Both ${REC[r].name} hosting dates fall inside one window — a single extra batch on ${first.day} covers them.`);
+      i=j;
+    }
+  });
+  const hostSlot=new Set();
+  outWin.A.concat(outWin.B,outWin.C).forEach(e=>hostSlot.add(e.day+'|'+e.meal));
+  sessions.forEach(s=>{if(s.days.length>1)flags.push(`${REC[s.r].name} for ${s.days.join(' and ')} comes from one extra batch cooked ${s.day} — the later date eats it ${DAYS.indexOf(s.days[s.days.length-1])-DAYS.indexOf(s.day)} day(s) on.`)});
+  hostEv.forEach(e=>{const w=eatDays(ord[e.recipe],ordBefore[e.recipe]);
+    if(w.includes(e.day)&&e.day!==ord[e.recipe]){
+      const age=DAYS.indexOf(e.day)-DAYS.indexOf(ord[e.recipe]);
+      if(age>0)flags.push(`Guests get ${REC[e.recipe].name} ${age} day${age>1?'s':''} after cooking. Safe, but hosting on ${ord[e.recipe]} would serve it fresh.`)}
+    else if(!w.includes(e.day))adj.push(`${e.day} hosting needs its own ${REC[e.recipe].name} batch — the ordinary one is cooked ${ord[e.recipe]} and wouldn't be safe by then. Your normal week is untouched.`)});
+
+  // --- lay out the week ---
+  const plan={};DAYS.forEach(d=>plan[d]={L:BASE[d].L.map(a=>[...a]),D:BASE[d].D.map(a=>[...a]),
+    Lkind:'',Dkind:'',Lhost:null,Dhost:null,moved:{L:false,D:false}});
+  ev.forEach(e=>{
+    const slot=plan[e.day][e.meal];
+    slot.filter(([id])=>!F[id].stays).forEach(([id,q])=>{if(!REC[id])shed(id,q)});
+    plan[e.day][e.meal]=slot.filter(([id])=>F[id].stays);
+    if(e.kind==='out'){
+      plan[e.day][e.meal+'kind']='out';
+      const gone=slot.filter(([id])=>!F[id].stays);
+      removed[e.day+'|'+e.meal]={k:gone.reduce((t,[id,q])=>t+F[id].k*q,0),
+        p:gone.reduce((t,[id,q])=>t+F[id].p*q,0),
+        serv:gone.reduce((t,[id,q])=>t+(REC[id]?q:0),0),day:e.day,meal:e.meal};
+    }
+    else{
+      plan[e.day][e.meal+'kind']='host';
+      plan[e.day][e.meal+'host']={recipe:e.recipe||'B',guests:e.guests};
+      if(e.recipe==='other'){
+        const gone=slot.filter(([id])=>!F[id].stays);
+        removed[e.day+'|'+e.meal]={k:gone.reduce((t,[id,q])=>t+F[id].k*q,0),
+          p:gone.reduce((t,[id,q])=>t+F[id].p*q,0),
+          serv:gone.reduce((t,[id,q])=>t+(REC[id]?q:0),0),day:e.day,meal:e.meal,host:1};
+        adj.push(`Hosting ${e.day} ${e.meal==='L'?'lunch':'dinner'} off-menu — your own portion isn't counted, same as a meal out.`);
+      }
+      else plan[e.day][e.meal].unshift([e.recipe,1]);
+    }
+  });
+
+  // --- servings the ordinary batch has to cover (host-session servings excluded) ---
+  const mine={A:0,B:0,C:0};
+  DAYS.forEach(d=>['L','D'].forEach(m=>{
+    if(hostSlot.has(d+'|'+m))return;
+    plan[d][m].forEach(([id,q])=>{if(REC[id])mine[id]+=q})}));
+  ['A','B','C'].forEach(r=>{
+    const g=inWin[r].reduce((t,e)=>t+e.guests,0), raw=mine[r]+g;
+    // no guests: never cook an odd batch, so round down and let the meals out cover the gap
+    const total=g>0?Math.ceil(raw/2)*2:Math.floor(raw/2)*2;
+    sessions.unshift({r,day:ord[r],before:ordBefore[r],kind:'ordinary',
+      forMe:mine[r],guests:g,total,spare:Math.max(0,total-raw),short:Math.max(0,raw-total)});
+  });
+  // give back servings the round-down can't cover, taking from the fullest sitting first
+  sessions.filter(x=>x.kind==='ordinary'&&x.short>0).forEach(x=>{
+    let drop=x.short;
+    while(drop>0){
+      const dayP=d=>[...plan[d].L,...plan[d].D,['cof',1],['supp',1]].reduce((t,[id,q])=>t+F[id].p*q,0);
+      const opts=[];
+      DAYS.forEach(d=>['D','L'].forEach(m=>{
+        if(plan[d][m+'kind'])return;
+        const ex=plan[d][m].find(([id])=>id===x.r);if(!ex)return;
+        opts.push({d,m,q:ex[1],safe:dayP(d)-F[x.r].p>=FLOOR_P})}));
+      opts.sort((a,b)=>(b.safe-a.safe)||(b.q-a.q));
+      const best=opts[0]||null;
+      if(!best)break;
+      const ex=plan[best.d][best.m].find(([id])=>id===x.r);
+      ex[1]--;if(ex[1]===0)plan[best.d][best.m]=plan[best.d][best.m].filter(([id])=>id!==x.r);
+      plan[best.d].moved[best.m]=true;x.forMe--;drop--;
+      adj.push(`${best.d} ${best.m==='L'?'lunch':'dinner'} drops a ${REC[x.r].name} serving so the batch stays even — the meals out cover the difference.`);
+    }
+  });
+  sessions.filter(s=>s.kind==='host').forEach(s=>{
+    const raw=s.forMe+s.guests;s.total=Math.ceil(raw/2)*2;s.spare=s.total-raw});
+
+  // --- place spares on the lightest home sitting, restaurant calories included ---
+  const outK=d=>Object.values(removed).filter(o=>o.day===d).reduce((t,o)=>t+o.k,0);
+  const dayKcal=d=>[...plan[d].L,...plan[d].D,['cof',1],['supp',1]]
+    .reduce((t,[id,q])=>t+F[id].k*q,0)+outK(d);
+  sessions.filter(s=>s.spare>0).forEach(s=>{
+    let left=s.spare;
+    const win=eatDays(s.day,s.before);
+    while(left>0){
+      const c=[];
+      win.forEach(d=>['D','L'].forEach(m=>{
+        if(plan[d][m+'kind']==='out'||!HOME(d,m))return;
+        const ex=plan[d][m].find(([id])=>id===s.r);if(!ex||ex[1]>=2)return;
+        c.push({d,m,after:dayKcal(d)+F[s.r].k})}));
+      const pick=c.filter(x=>x.after<=DAY_CAP).sort((a,b)=>a.after-b.after)[0];
+      if(!pick)break;
+      plan[pick.d][pick.m].find(([id])=>id===s.r)[1]++;
+      plan[pick.d].moved[pick.m]=true;s.forMe++;left--;
+      adj.push(`The spare ${REC[s.r].name} serving joins ${pick.d} ${pick.m==='L'?'lunch':'dinner'} — the lightest day that can take it, landing near ${Math.round(pick.after)} kcal.`);
+    }
+    if(left>0){
+      adj.push(`The extra ${REC[s.r].name} batch stays at ${s.total} servings so it's an even number — ${left} portion${left>1?'s are':' is'} spare. Offer ${left>1?'them':'it'} round for seconds, or keep ${left>1?'them':'it'} as your own leftover.`)}
+  });
+
+  // --- what to cook, per session ---
+  const byDay={};sessions.forEach(s=>{if(s.total>0){(byDay[s.day]=byDay[s.day]||[]).push(s)}});
+  Object.keys(byDay).forEach(d=>{if(byDay[d].length>1)
+    flags.push(`${d} now cooks ${byDay[d].map(s=>REC[s.r].name).join(' and ')} — a heavy evening.`)});
+  sessions.forEach(s=>{
+    if(s.kind==='ordinary'){
+      if(s.total===0)adj.push(`No ${REC[s.r].name} this week — nothing to cook on ${s.day}.`);
+      else if(s.total<4)adj.push(`${REC[s.r].name}: ${s.total} servings instead of 4 (${REC[s.r].unit}).`);
+      if(s.guests)adj.push(`${s.guests} guest serving${s.guests>1?'s':''} come out of the ordinary ${REC[s.r].name} batch — ${s.total} total.`);
+    }else adj.push(`Extra ${REC[s.r].name} batch on ${s.day}: ${s.total} servings (${s.forMe} for you, ${s.guests} for guests).`);
+  });
+
+  // --- shopping: compare the real total against the standard 4-serving batch ---
+  ['A','B','C'].forEach(r=>{
+    const tot=sessions.filter(s=>s.r===r).reduce((t,s)=>t+s.total,0);
+    if(tot===4)return;
+    if(tot===0)bump(cut,`all ${REC[r].name} ingredients`);
+    else if(tot<4)bump(cut,`${REC[r].name} ingredients down to ${tot}/4 of the usual`);
+    else bump(add,`${REC[r].name} ingredients for ${tot-4} serving${tot-4>1?'s':''} beyond the usual batch`);
+  });
+
+  // --- crema: it's a component of the taco recipe, so it's made when tacos are.
+  // The Monday bowls draw on the jar from the previous Saturday; any extra bowl or
+  // taco batch needs its own supplementary crema on its own day.
+  const ordA=sessions.find(x=>x.r==='A'&&x.kind==='ordinary');
+  const ordC=sessions.find(x=>x.r==='C'&&x.kind==='ordinary');
+  const cremaList=[];
+  const cTot=ordC?ordC.total:0, aTot=ordA?ordA.total:0;
+  const NEXT_A=4;   // assume a standard Burrito Bowl batch next Monday
+  if(cTot>0){
+    const serv=cTot+NEXT_A;
+    cremaList.push({on:ordC.day,cups:cupTxt(CREMA_CUPS*serv/CREMA_COVERS),cupsNum:CREMA_CUPS*serv/CREMA_COVERS,serv,
+      note:`${cTot} taco serving${cTot>1?'s':''} this weekend, plus a standard ${NEXT_A} Burrito Bowls next Monday. This week's Monday bowls came out of last Saturday's jar, so this week's smaller batch doesn't shrink what you make now. Scale down only if you already know next week is lighter.`});
+  }else{
+    cremaList.push({on:ordC?ordC.day:'Sat',cups:cupTxt(CREMA_CUPS*NEXT_A/CREMA_COVERS),cupsNum:CREMA_CUPS*NEXT_A/CREMA_COVERS,serv:NEXT_A,
+      note:`no tacos this week, but next Monday's ${NEXT_A} Burrito Bowls still need it — make it on its own so the cycle doesn't break`});
+    adj.push(`No tacos this week, but still make ${cupTxt(CREMA_CUPS*NEXT_A/CREMA_COVERS)} of crema on Saturday — next Monday's Burrito Bowls depend on it and nothing else produces it.`);
+  }
+  sessions.filter(x=>REC[x.r].crema&&x.kind==='host'&&x.total>0).forEach(x=>{
+    cremaList.push({on:x.day,cups:cupTxt(CREMA_CUPS*x.total/CREMA_COVERS),cupsNum:CREMA_CUPS*x.total/CREMA_COVERS,serv:x.total,
+      note:`for the extra ${x.total}-serving ${REC[x.r].name} batch`});
+    adj.push(`The extra ${REC[x.r].name} batch needs its own crema on ${x.day} — ${cupTxt(CREMA_CUPS*x.total/CREMA_COVERS)} of vegan sour cream. Saturday's jar is already committed.`);
+  });
+
+  // --- sour cream follows the crema, so it belongs on the shopping list ---
+  const cremaCups=cremaList.reduce((t,c)=>t+(c.cupsNum||0),0);
+  const nBatch=cremaList.length;
+  if(Math.abs(cremaCups-CREMA_CUPS)>0.05){
+    const where=nBatch>1?` across ${nBatch} batches (${cremaList.map(c=>c.cups+' '+c.on).join(', ')})`:'';
+    if(cremaCups>CREMA_CUPS)
+      bump(add,`${cupTxt(cremaCups-CREMA_CUPS)} more vegan sour cream — ${cupTxt(cremaCups)} total${where}, plus chipotles in adobo to match`);
+    else
+      bump(cut,`vegan sour cream down to ${cupTxt(cremaCups)} from the usual 1½ cups${where}`);
+  }else if(nBatch>1){
+    bump(add,`still 1½ cups vegan sour cream total, but split into ${nBatch} batches (${cremaList.map(c=>c.cups+' '+c.on).join(', ')})`);
+  }
+
+  // --- hold back a Huel on any day still over the cap ---
+  DAYS.forEach(d=>{
+    const outHere=Object.values(removed).filter(o=>o.day===d).reduce((t,o)=>t+o.k,0);
+    const tot=()=>{const b=[...plan[d].L,...plan[d].D,['cof',1],['supp',1]]
+      .reduce((t,[id,q])=>({k:t.k+F[id].k*q,p:t.p+F[id].p*q}),{k:0,p:0});
+      return {k:b.k,p:b.p,est:b.k+outHere}};
+    if(dayKcal(d)<=DAY_CAP)return;
+    for(const m of ['D','L']){
+      const h=plan[d][m].find(([id])=>id==='huel');if(!h)continue;
+      if(tot().p-F.huel.p<FLOOR_P)continue;
+      plan[d][m]=plan[d][m].filter(([id])=>id!=='huel');
+      bump(defer,'huel',1);plan[d].moved[m]=true;
+      adj.push(`${d} ran heavy — hold the Huel back (it keeps unopened); the day lands near ${Math.round(tot().est)} kcal including anything eaten out, with ${tot().p.toFixed(0)} g protein.`);
+      break;
+    }
+  });
+
+  // --- backfill any home slot left with no meal ---
+  DAYS.forEach(d=>['L','D'].forEach(m=>{
+    if(plan[d][m+'kind']||!HOME(d,m))return;
+    if(plan[d][m].some(([id])=>F[id].meal))return;
+    plan[d][m].unshift(['huel',1],['oat',1]);plan[d].moved[m]=true;
+    bump(add,'1 Huel Black RTD + 1 Mixed Berry oat bowl');
+    adj.push(`${d} ${m==='L'?'lunch':'dinner'} has no cooked serving — stand it up with 1 Huel RTD + 1 oat bowl (750 kcal, 52 g protein).`);
+  }));
+
+  // --- close any protein shortfall with the smallest thing that does it ---
+  DAYS.forEach(d=>{
+    const un=(plan[d].Lkind==='out'?1:0)+(plan[d].Dkind==='out'?1:0)
+      +(plan[d].Lhost&&plan[d].Lhost.recipe==='other'?1:0)+(plan[d].Dhost&&plan[d].Dhost.recipe==='other'?1:0);
+    if(un)return;
+    const p=()=>[...plan[d].L,...plan[d].D,['cof',1],['supp',1]].reduce((t,[id,q])=>t+F[id].p*q,0);
+    const gap=FLOOR_P-p();
+    if(gap<=0)return;
+    const slot=plan[d].D;
+    if(gap<=4){
+      const n=Math.ceil(gap/F.nooch.p);
+      const ex=slot.find(([id])=>id==='nooch');
+      if(ex)ex[1]+=n;else slot.push(['nooch',n]);
+      adj.push(`${d} sat ${gap.toFixed(1)} g under the protein floor — ${n} extra tsp of nooch closes it (${(n*F.nooch.k).toFixed(0)} kcal).`);
+    }else{
+      const pick=gap<=F.evo.p?'evo':gap<=F.soy.p?'soy':'huel';
+      slot.push([pick,1]);bump(add,`1 ${F[pick].n}`);
+      adj.push(`${d} sat ${gap.toFixed(0)} g under the protein floor — add 1 ${F[pick].n}.`);
+    }
+    plan[d].moved.D=true;
+  });
+
+  // --- metrics ---
+  const days={};let wk={k:0,p:0,s:0},socials=0;
+  DAYS.forEach(d=>{
+    let k=0,p=0,s=0;
+    [...plan[d].L,...plan[d].D,['cof',1],['supp',1]].forEach(([id,q])=>{k+=F[id].k*q;p+=F[id].p*q;s+=F[id].s*q});
+    const un=(plan[d].Lkind==='out'?1:0)+(plan[d].Dkind==='out'?1:0)
+      +(plan[d].Lhost&&plan[d].Lhost.recipe==='other'?1:0)+(plan[d].Dhost&&plan[d].Dhost.recipe==='other'?1:0);
+    socials+=un;days[d]={k,p,s,uncounted:un,est:k,outTarget:0,slots:[],gapP:Math.max(0,FLOOR_P-p)};
+    wk.k+=k;wk.p+=p;wk.s+=s;
+  });
+  // what the meals out have to bring, so the week still lands in the band
+  const outSlots=Object.values(removed);
+  const shortfall=Math.max(0,WK_LO-wk.k);
+  const weight=outSlots.reduce((t,o)=>t+Math.max(o.k,1),0)||1;
+  outSlots.forEach(o=>{
+    o.target=Math.round(o.k);                          // what this meal replaces
+    o.lo=Math.max(300,Math.round(o.target*0.8/50)*50);
+    o.hi=Math.round(o.target*1.2/50)*50;
+  });
+  DAYS.forEach(d=>{
+    const here=outSlots.filter(o=>o.day===d);
+    const wp=here.reduce((t,o)=>t+Math.max(o.p,1),0)||1;
+    here.forEach(o=>{o.pTarget=Math.round(days[d].gapP*Math.max(o.p,1)/wp)});
+    days[d].outTarget=here.reduce((t,o)=>t+o.target,0);
+    days[d].est=days[d].k+days[d].outTarget;
+    days[d].slots=here;
+  });
+  const weekEst=wk.k+outSlots.reduce((t,o)=>t+o.target,0);
+  const residual=Math.round(WK_LO-weekEst);
+  const protGaps=DAYS.filter(d=>!days[d].uncounted&&days[d].p<FLOOR_P).map(d=>`${d}: ${days[d].p.toFixed(0)} g`);
+  DAYS.forEach(d=>{if(days[d].uncounted&&days[d].gapP>45){
+    const n=[...BASE[d].L,...BASE[d].D].filter(([id])=>REC[id]).reduce((t,[,q])=>t+q,0);
+    flags.push(`${d} is an awkward day to be out — it normally carries ${n} home-cooked serving${n>1?'s':''}, so your own food only reaches ${days[d].p.toFixed(0)} g. A different day would cost you less.`)}});
+  DAYS.forEach(d=>{if(days[d].est>DAY_CAP)flags.push(`${d} comes to roughly ${Math.round(days[d].est)} kcal including anything eaten out — heavier than any standard day.`)});
+  if(ev.length>=4)flags.push('You\'re changing four or more meals — this is no longer the standard week. Give the cooking dates a manual look before shopping.');
+  const naAvg=(wk.s+socials*naEst)/7;
+  const cookDay={},cookBefore={};
+  ['A','B','C'].forEach(r=>{cookDay[r]=ord[r];cookBefore[r]=ordBefore[r]});
+  const batch={};['A','B','C'].forEach(r=>{
+    const ss=sessions.filter(s=>s.r===r);
+    batch[r]={total:ss.reduce((t,s)=>t+s.total,0),forMe:ss.reduce((t,s)=>t+s.forMe,0),
+      guests:ss.reduce((t,s)=>t+s.guests,0)}});
+  const preWeek=sessions.filter(x=>x.before&&x.total>0);
+  void weight;
+  return {plan,days,wk,batch,sessions,cremaList,preWeek,removed,shortfall,weekEst,residual,adj,flags,add,cut,defer,skip,less,socials,protGaps,naAvg,cookDay,cookBefore,naEst,byDay};
+}
+const MAXE=6;
+let state=load();
+function load(){try{const s=JSON.parse(localStorage.getItem('weekPlannerV12'));
+  if(s&&Array.isArray(s.ev))return {ev:s.ev,naLevel:s.naLevel||'typical'}}catch(e){}
+  return {ev:[],naLevel:'typical'}}
+function persist(){localStorage.setItem('weekPlannerV12',JSON.stringify(state))}
+function saveNow(){persist();const v=document.getElementById('verdict');v.textContent='Saved';setTimeout(run,1200)}
+function resetAll(){localStorage.removeItem('weekPlannerV12');state={ev:[],naLevel:'typical'};run()}
+function addEvent(){if(state.ev.length>=MAXE)return;
+  for(const d of DAYS)for(const m of ['D','L'])
+    if(!state.ev.some(e=>e.day===d&&e.meal===m)){
+      state.ev.push({day:d,meal:m,kind:'out',guests:4,recipe:'B',cookMon:true});run();return}}
+function delEvent(i){state.ev.splice(i,1);run()}
+function setEv(i,k,v){state.ev[i][k]=(k==='guests')?Math.max(1,Math.min(12,+v||1)):(k==='cookMon'?v==='yes':v);run()}
+function setNa(v){state.naLevel=v;run()}
+
+function render(){
+  const R=compute(state.ev,{naLevel:state.naLevel});
+  const ev=state.ev;
+
+  document.getElementById('events').innerHTML=
+    (ev.length?'':'<p class="ehint" style="margin:0 0 10px">Standard week. Add a meal you\'ll eat out, or a dinner you\'re hosting.</p>')
+    +ev.map((e,i)=>{
+      const isMonD=e.day==='Mon'&&e.meal==='D'&&e.kind==='out';
+      let tail;
+      if(e.kind==='host')tail=`serving <select onchange="setEv(${i},'recipe',this.value)" aria-label="What you're serving">
+          <option value="A"${e.recipe==='A'?' selected':''}>Burrito Bowls</option>
+          <option value="B"${e.recipe==='B'?' selected':''}>Spring Roll Bowls</option>
+          <option value="C"${e.recipe==='C'?' selected':''}>Black Bean Tacos</option>
+          <option value="other"${e.recipe==='other'?' selected':''}>something else</option></select>
+        to <input type="number" min="1" max="12" value="${e.guests}" style="width:58px" onchange="setEv(${i},'guests',this.value)" aria-label="Guest servings"> guests`;
+      else if(isMonD)tail=`still cooking Monday? <select onchange="setEv(${i},'cookMon',this.value)" aria-label="Can you still cook Monday">
+          <option value="yes"${e.cookMon!==false?' selected':''}>yes</option>
+          <option value="no"${e.cookMon===false?' selected':''}>no — cook Sunday</option></select>`;
+      else tail='<span class="ehint">that recipe\'s batch shrinks; drinks stay</span>';
+      return `<div class="erow"><span class="enum">${i+1}</span>
+        <select onchange="setEv(${i},'day',this.value)" aria-label="Day">${DAYS.map(d=>`<option${d===e.day?' selected':''}>${d}</option>`).join('')}</select>
+        <select onchange="setEv(${i},'meal',this.value)" aria-label="Meal">
+          <option value="L"${e.meal==='L'?' selected':''}>Lunch</option>
+          <option value="D"${e.meal==='D'?' selected':''}>Dinner</option></select>
+        <select onchange="setEv(${i},'kind',this.value)" aria-label="Type">
+          <option value="out"${e.kind==='out'?' selected':''}>Eating out</option>
+          <option value="host"${e.kind==='host'?' selected':''}>Hosting</option></select>
+        <span class="ehint">${tail}</span>
+        <button onclick="delEvent(${i})">Remove</button></div>`}).join('')
+    +`<div class="btns" style="margin-top:12px">
+        <button onclick="addEvent()"${ev.length>=MAXE?' disabled':''}>Add a meal${ev.length>=MAXE?' (max 6)':''}</button>
+        <span class="ehint" style="align-self:center">assume meals out are
+        <select onchange="setNa(this.value)" aria-label="Restaurant sodium assumption">
+          <option value="light"${state.naLevel==='light'?' selected':''}>lighter (~800 mg)</option>
+          <option value="typical"${state.naLevel==='typical'?' selected':''}>typical (~1,300 mg)</option>
+          <option value="salty"${state.naLevel==='salty'?' selected':''}>salty (~1,800 mg)</option>
+        </select></span></div>`;
+
+  const pw=document.getElementById('preweek');
+  pw.innerHTML=R.preWeek.length
+    ? `<div class="note i" style="margin:0 0 12px"><b>Before this week —</b> Sunday evening: cook ${R.preWeek.map(s=>`${s.total} × ${REC[s.r].name}`).join(' + ')}, for Monday through Wednesday. The Sunday on this calendar is the one at the end of the week; it still does the tacos.</div>`
+    : '';
+  const g=document.getElementById('grid');g.innerHTML='';
+  DAYS.forEach(d=>{
+    const p=R.plan[d],m=R.days[d];
+    const el=document.createElement('div');el.className='day'+(d==='Tue'?' protect':'');
+    let h=`<div class="dhead"><span class="dname">${d}</span>${d==='Tue'?'<span class="tag">no cook</span>':''}</div>`;
+    ['L','D'].forEach(sl=>{
+      const kind=p[sl+'kind'],host=p[sl+'host'];
+      const cls=kind==='out'?'out':kind==='host'?'host':(p.moved[sl]?'shift':'');
+      const list=p[sl].map(([id,q])=>q>1?`${F[id].n} ×${q}`:F[id].n).join(' · ');
+      let body;
+      if(kind==='out'){
+        const o=R.removed[d+'|'+sl];
+        body='Eating out'+(list?` <span style="color:var(--dim)">· still have ${list}</span>`:'');
+        if(o){
+          body+=`<div class="need" style="margin-top:6px">aim for ${o.pTarget} g protein</div>`;
+          body+=`<div style="color:var(--dim);font-size:12px;margin-top:2px">roughly ${o.lo.toLocaleString()}–${o.hi.toLocaleString()} kcal${o.serv>1?` · replaces ${o.serv} servings`:''}</div>`;
+        }
+      }
+      else if(kind==='host')body=(host.recipe==='other'?`Hosting, off-menu — ${host.guests} guests`
+        :`Hosting ${REC[host.recipe].name} — +${host.guests} guests`)+(list?`<br><span style="color:var(--dim)">${list}</span>`:'');
+      else body=list||'—';
+      h+=`<div class="slot ${cls}"><div class="slabel">${sl==='L'?'Lunch':'Dinner'}</div><div class="sbody">${body}</div></div>`});
+    const here=R.sessions.filter(s=>s.total>0&&!s.before&&s.day===d);
+    let cook=here.length?here.map(s=>`Cook ${s.total} × ${REC[s.r].name}${s.kind==='host'?' (extra batch)':''}`).join(' + '):'No cooking';
+    const cr=R.cremaList.filter(c=>c.on===d);
+    if(cr.length)cook+=(cook==='No cooking'?'Make ':' + ')+cr.map(c=>`${c.cups} crema`).join(' + ');
+    if(d==='Mon'&&R.cookBefore.A&&!here.length)cook='Burrito Bowls cooked Sunday night — nothing to do today';
+    h+=`<div class="cookline${cook==='No cooking'?'':' alt'}">${cook}</div>`;
+    const pw=Math.min(100,m.p/170*100), sw=Math.min(100,m.s/3300*100);
+    const pbad=!m.uncounted&&m.p<FLOOR_P;
+    h+=`<div class="strip">
+      <div class="mrow"><span>protein</span><span class="mval ${pbad?'bad':''}">${m.p.toFixed(0)} g</span></div>
+      <div class="bar"><div class="fill ${pbad?'bad':''}" style="width:${pw}%"></div><div class="tick" style="left:${FLOOR_P/170*100}%"></div></div>
+      <div class="mrow"><span>sodium</span><span class="mval">${Math.round(m.s)} mg</span></div>
+      <div class="bar"><div class="fill" style="width:${sw}%"></div><div class="tick" style="left:${CEIL_NA/3300*100}%"></div></div>
+      <div class="mrow"><span>calories</span><span class="mval">${Math.round(m.k)}</span></div>
+
+    </div>`;
+    el.innerHTML=h;g.appendChild(el)});
+
+  const w=R.wk, eaten=['A','B','C'].reduce((t,r)=>t+R.batch[r].forMe,0);
+  const cooked=['A','B','C'].reduce((t,r)=>t+R.batch[r].total,0);
+  document.getElementById('totals').innerHTML=`
+    <div class="tot"><span>Calories, your own food</span><b>${Math.round(w.k).toLocaleString()}</b></div>
+    <div class="tot"><span>Protein</span><b class="${w.p>=WK_P||R.socials?'':'bad'}">${w.p.toFixed(0)} g</b></div>
+    <div class="tot"><span>Sodium average${R.socials?', est.':''}</span><b class="${R.naAvg>CEIL_NA?'over':''}">${Math.round(R.naAvg).toLocaleString()} mg/day</b></div>
+    <div class="tot"><span>Servings cooked / for you</span><b>${cooked} / ${eaten}</b></div>
+    <div class="tot"><span>Heaviest day, est.</span><b class="${Math.max(...DAYS.map(d=>R.days[d].est))>2800?'over':''}">${Math.round(Math.max(...DAYS.map(d=>R.days[d].est))).toLocaleString()} kcal</b></div>
+    <div class="tot"><span>Meals out / hosted</span><b>${R.socials} / ${state.ev.filter(e=>e.kind==='host').length}</b></div>
+    ${R.socials?`<div class="tot"><span>Week incl. meals out</span><b class="${R.residual>250||R.residual<-250?'over':''}">${Math.round(R.weekEst).toLocaleString()} kcal</b></div>`:''}`;
+
+  let n='';
+  if(R.naAvg>CEIL_NA)n+=`<div class="note a"><b>Sodium average is over 2,300 mg.</b> Try the lighter restaurant assumption, drop the Tuesday bread, or move a meal out onto a saltier day.</div>`;
+  if(R.protGaps.length)n+=`<div class="note c"><b>Days under the protein floor:</b><br>${R.protGaps.join('<br>')}</div>`;
+  R.flags.forEach(f=>n+=`<div class="note a">${f}</div>`);
+  if(R.socials){
+    n+=`<div class="note i">Each meal out is sized to replace roughly what you'd have eaten at home. Treat the ranges as orientation, not a target — protein is the number worth watching.</div>`;
+    if(R.residual>250)n+=`<div class="note a">With those meals the week lands about <b>${R.residual.toLocaleString()} kcal under</b> the band, because keeping batches even meant one fewer serving. Fine occasionally; add a Soylent or an oat bowl if you'd rather close it.</div>`;
+    else if(R.residual<-250)n+=`<div class="note a">With those meals the week runs about <b>${(-R.residual).toLocaleString()} kcal over</b> the band. Order on the lighter side, or skip a Huel.</div>`;
+  }
+  if(!R.protGaps.length&&!R.flags.length&&R.naAvg<=CEIL_NA&&!R.socials)n+=`<div class="note g">Every day clears the protein floor and the sodium average holds.</div>`;
+  document.getElementById('totalnotes').innerHTML=n;
+
+  const v=document.getElementById('verdict');
+  if(!state.ev.length){v.className='chip';v.textContent='Standard week'}
+  else if(R.protGaps.length||(w.p<WK_P&&!R.socials)){v.className='chip bad';v.textContent='Protein gap'}
+  else if(R.naAvg>CEIL_NA){v.className='chip warnc';v.textContent='Sodium over average'}
+  else if(R.socials){v.className='chip';v.textContent='Provisionally checks out'}
+  else {v.className='chip';v.textContent='Week checks out'}
+
+  document.getElementById('batches').innerHTML=R.sessions.filter(s=>s.total>0||s.kind==='ordinary').map(s=>
+    `<div class="batch"><b>${REC[s.r].name}${s.kind==='host'?' · extra batch':''}</b><br>
+      ${s.total===0?'Not cooked this week':`${s.total} serving${s.total>1?'s':''} on ${s.before?'Sunday night':s.day}`}
+      ${s.guests?` <span style="color:var(--indigo)">(${s.forMe} you + ${s.guests} guests)</span>`:''}
+      <span class="dep">${REC[s.r].unit}</span></div>`).join('')
+    +R.cremaList.map(c=>`<div class="batch"><b>Chipotle Crema · ${c.on}</b><br>${c.cups} vegan sour cream
+      <span class="dep">Covers ${c.serv} servings — ${c.note}. A full 1½-cup batch covers 8.</span></div>`).join('');
+
+  document.getElementById('adj').innerHTML=R.adj.length?R.adj.map(a=>`<li>${a}</li>`).join('')
+    :'<li style="color:var(--dim)">Nothing to change. Cook and eat as written.</li>';
+
+  const A=Object.keys(R.add),C2=Object.keys(R.cut);
+  const row=(cls,op,txt)=>`<li class="${cls}"><span class="op">${op}</span><span>${txt}</span></li>`;
+  let sl='';
+  A.forEach(x=>sl+=row('add','+',x));
+  C2.forEach(x=>sl+=row('cut','−',x));
+  Object.entries(R.skip).forEach(([id,q])=>sl+=row('cut','−',`don't buy ${q>1?q+' × ':''}${F[id].n}`));
+  Object.entries(R.defer).forEach(([id,q])=>sl+=row('cut','−',`${q} × ${F[id].n} stays in the freezer for a later week`));
+  Object.entries(R.less).forEach(([id,q])=>sl+=row('cut','−',`${q} fewer tsp ${F[id].n} — no restock needed`));
+  document.getElementById('shop').innerHTML=sl?`<ul class="shoplist">${sl}</ul>`
+    :'<p class="ehint" style="margin:0">Standard list, no changes.</p>';
+}
+function run(){render();persist()}
+run();
+</script>
+</body></html>
